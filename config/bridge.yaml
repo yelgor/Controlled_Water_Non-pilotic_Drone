@@ -1,0 +1,39 @@
+# ros_gz_bridge: Gazebo <-> ROS 2
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+# Команди тяги рушіїв, Н (обмежено в SDF до [-5, 5])
+- ros_topic_name: "/kater/thrust_left"
+  gz_topic_name: "/model/kater/joint/left_prop_joint/cmd_thrust"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+- ros_topic_name: "/kater/thrust_right"
+  gz_topic_name: "/model/kater/joint/right_prop_joint/cmd_thrust"
+  ros_type_name: "std_msgs/msg/Float64"
+  gz_type_name: "gz.msgs.Double"
+  direction: ROS_TO_GZ
+
+# Ground truth (без шуму) - еталон для оцінки фільтра Калмана
+- ros_topic_name: "/kater/odom_gt"
+  gz_topic_name: "/model/kater/odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+# Сенсори (поки без шуму)
+- ros_topic_name: "/kater/imu"
+  gz_topic_name: "/kater/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/kater/navsat"
+  gz_topic_name: "/kater/navsat"
+  ros_type_name: "sensor_msgs/msg/NavSatFix"
+  gz_type_name: "gz.msgs.NavSat"
+  direction: GZ_TO_ROS
