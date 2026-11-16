@@ -74,6 +74,10 @@
 На заїздах 2026-11-16 зв'язок з пультом, компас і GPS працювали без обривів. Подробиці — у
 [`docs/changes-2026-11-16.md`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/blob/feature/pid-control/docs/changes-2026-11-16.md).
 
+![Трек заїзду log000](https://raw.githubusercontent.com/yelgor/Controlled_Water_Non-pilotic_Drone/feature/pid-control/docs/img/log000_track.png)
+
+Колір треку — швидкість (синій 0 м/с → червоний 1,5 м/с), зелена точка — старт, червона — фініш.
+
 ### Навігація: IMU + GPS
 
 Плату з IMU і GPS носили по маршруту і порівнювали: тільки GPS (чорні точки), тільки IMU (помаранчева),
