@@ -1,0 +1,11 @@
+.pio/
+__pycache__/
+*.pyc
+log*.csv
+# логи заїздів і карти — містять точні координати, лише локально
+logs/
+*_map.html
+# IDE і службові папки
+.idea/
+.claude/
+.DS_Store
