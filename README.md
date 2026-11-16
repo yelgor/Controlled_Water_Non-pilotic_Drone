@@ -66,6 +66,27 @@
 | `kater_rc_old/` | стара прошивка ручного керування (без GPS та IMU) |
 | `schedular/` | двоядерний планувальник задач з самовідновленням IMU (ранній каркас) |
 
+## Результати
+
+### Катер на воді
+
+Перший заїзд з записом логу (`log000`): **164 м за 4,2 хв, максимум 1,5 м/с**, газ обмежено до 30 %.
+На заїздах 2026-11-16 зв'язок з пультом, компас і GPS працювали без обривів. Подробиці — у
+[`docs/changes-2026-11-16.md`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/blob/feature/pid-control/docs/changes-2026-11-16.md).
+
+### Навігація: IMU + GPS
+
+Плату з IMU і GPS носили по маршруту і порівнювали: тільки GPS (чорні точки), тільки IMU (помаранчева),
+фільтр EKF, що поєднує обидва (синя).
+
+| Прогулянка 1 | Прогулянка 2 |
+|---|---|
+| ![Прогулянка 1](https://raw.githubusercontent.com/yelgor/Controlled_Water_Non-pilotic_Drone/experiment/imu_test/data/imu_20261114_193441_gpswalk_gps.png) | ![Прогулянка 2](https://raw.githubusercontent.com/yelgor/Controlled_Water_Non-pilotic_Drone/experiment/imu_test/data/imu_20261114_195424_gpswalk2_gps.png) |
+| тільки IMU: 20 м похибки, **EKF: 8 м** | тільки IMU: 53 м похибки, **EKF: 6 м** |
+
+Висновок: одного IMU не вистачає, а EKF IMU + GPS тримає трек у межах кількох метрів і переживає
+короткі провали GPS. Усі графіки й цифри — у [гілці `experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment).
+
 ## Швидкий старт (прошивка катера)
 
 ```bash
