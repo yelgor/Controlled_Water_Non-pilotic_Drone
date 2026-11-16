@@ -1,1 +1,78 @@
-# -ontrolled_Water_Non-pilotic_Drone
+# Controlled Water Non-pilotic Drone
+
+Водний безпілотний катер-аероглісер на ESP32-S3: один безщітковий мотор з повітряним пропелером,
+серво повертає кермо в потоці повітря. Керування з пульта RadioMaster TX12 (ELRS/CRSF),
+сенсори — IMU (NXP FXOS8700 + FXAS21002 або LSM9DS1) і GPS NEO-6M.
+
+Мета — від ручного керування до утримання курсу і швидкості (PID) і автономного руху.
+
+**Команда КВН:** Владислав Ткачук, Назар Рожко, Захар Колодчак, Матвій Піх.
+
+## Де що лежить
+
+Кожна частина проєкту — в окремій гілці. Натисни на назву, щоб відкрити.
+
+| Частина | Гілка | Що всередині | Стан |
+|---|---|---|---|
+| **Прошивка катера** | [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) | основна прошивка: режими, PID курсу і швидкості, безпека, лог у flash, консоль, тести; скрипти для логів і карти; документація | ✅ катер пливе з пульта, PID налаштовується |
+| **Симуляція** | [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) | Gazebo Sim 8 + ROS 2 Jazzy: модель катера, EKF, PID, маршрути, результати | ✅ готова |
+| **Експерименти** | [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) | тести IMU і GPS: дрейф гіро, калібрування, EKF гіро + GPS | 🔄 в процесі |
+| **Залізо** | [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) | перша прошивка серво + мотор, інструкції (прив'язка пульта, LSM9DS1) | ⏳ плата ще не розведена |
+| **Допоміжний софт** | [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) | тест серво, стара прошивка ручного керування, планувальник задач | 📦 архів і тести |
+
+## Детальніше по гілках
+
+### [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) — прошивка катера
+
+| Шлях | Що це |
+|---|---|
+| `firmware/` | прошивка (PlatformIO): `src/` — робота з залізом, `lib/` — логіка, `test/` — тести на ПК |
+| `tools/` | злити лог з катера, графіки, карта заїзду |
+| `docs/architecture.md` | як влаштована прошивка |
+| `docs/pid-tuning.md` | як налаштовувати PID на воді |
+| `docs/changes-2026-11-16.md` | результати перших заїздів і зміни |
+
+### [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) — симуляція
+
+| Шлях | Що це |
+|---|---|
+| `simulation/models/`, `worlds/` | модель катера і світ з водою |
+| `simulation/scripts/` | EKF (`kf.py`), регулятор (`controller.py`), маршрути, шум сенсорів, графіки |
+| `simulation/results/` | логи і графіки прогонів (квадрат, коло, вісімка, змійка…) |
+
+Модель у симуляції відрізняється від реального катера: два мотори з реверсом, маса 1,5 кг.
+
+### [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) — експерименти
+
+| Шлях | Що це |
+|---|---|
+| `imu_test/src/` | прошивка тесту: IMU ~240 Гц, фільтр Madgwick, GPS, CSV у Serial |
+| `imu_test/tools/` | Python: запис, аналіз і варіація Аллана, калібрування, EKF гіро + GPS |
+| `imu_test/data/` | графіки і текстові звіти тестів |
+
+### [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) — залізо
+
+| Шлях | Що це |
+|---|---|
+| `motor_servo/` | перша прошивка: серво + ESC з пульта через ELRS/CRSF |
+| `motor_servo/docs/LSM9DS1.pdf` | документація на IMU |
+| `Instructione_bind/bind_elrs_tx12.pdf` | як прив'язати пульт TX12 до приймача |
+
+### [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) — допоміжний софт
+
+| Шлях | Що це |
+|---|---|
+| `check_servo/` | тест серво з монітора порту |
+| `kater_rc_old/` | стара прошивка ручного керування (без GPS та IMU) |
+| `schedular/` | двоядерний планувальник задач з самовідновленням IMU (ранній каркас) |
+
+## Швидкий старт (прошивка катера)
+
+```bash
+git clone https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone.git
+cd Controlled_Water_Non-pilotic_Drone
+git switch feature/pid-control
+cd firmware
+pio test -e native     # тести на ПК
+pio run -e esp32s3     # зібрати прошивку
+```
