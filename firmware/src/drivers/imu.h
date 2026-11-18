@@ -21,8 +21,10 @@ public:
     Chip chip() const { return chip_; }
     const char* chipName() const;
 
-    // Магнітне поле в осях човна, без калібрування (для `cal`), мкТл.
+    // Магнітне поле в осях човна, без калібрування (для `cal`), гаус.
     const nav::Vec3& rawMag() const { return mag_; }
+    // Відфільтрований напрям «вниз» в осях човна (рівно → 0, 0, 1). Для діагностики.
+    const nav::Vec3& down() const { return down_; }
     // Курс 0..360 або NaN.
     float heading(const nav::MagCal& cal, float declinationDeg) const;
 

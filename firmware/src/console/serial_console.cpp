@@ -2,6 +2,8 @@
 
 #include <Wire.h>
 
+#include <cmath>
+
 #include "drivers/actuators.h"
 #include "drivers/gps_neo6m.h"
 #include "drivers/imu.h"
@@ -24,6 +26,8 @@ const char* kHelp =
     "  log list | log dump <n> | log clear\n"
     "  tele on | tele off      живий CSV у цей порт\n"
     "  i2c                     пристрої на шині I2C (компас LSM9DS1 або FXOS8700)\n"
+    "  imu                     сирі дані компаса: нахил, поле до/після калібрування\n"
+    "  raw on | raw off        потік RAW,mx,my,mz,dx,dy,dz (Гс, осі човна) для калібрування на ПК\n"
     "  servo                   прогнати серво 1100/1500/1900 мкс (тільки DISARMED, мотор стоїть)\n";
 }  // namespace
 
@@ -89,6 +93,12 @@ void SerialConsole::printStatus(uint32_t nowMs) {
         io_.printf(" CH%u=%d", static_cast<unsigned>(i + 1), us);
     }
     io_.println();
+    io_.printf("GPS дані: %lu байт, речень OK %lu, з помилкою %lu%s\n",
+               static_cast<unsigned long>(ctx_.gps.charsReceived()),
+               static_cast<unsigned long>(ctx_.gps.sentencesOk()),
+               static_cast<unsigned long>(ctx_.gps.sentencesBad()),
+               ctx_.gps.charsReceived() == 0 ? "  ← немає даних: перевір TX/RX (15/16) і живлення GPS"
+                                             : "");
     io_.printf("лог: %s   час: %lu мс\n", ctx_.log.active() ? "пише" : "ні",
                static_cast<unsigned long>(nowMs));
 }
@@ -190,12 +200,21 @@ void SerialConsole::execute(const tuning::Command& c, uint32_t nowMs) {
         case CmdType::TeleOn:
             tele_ = true;
             return;
+        case CmdType::RawOn:
+            raw_ = true;
+            return;
+        case CmdType::RawOff:
+            raw_ = false;
+            return;
         case CmdType::TeleOff:
             tele_ = false;
             return;
         case CmdType::I2cScan: {
             int found = 0;
             for (uint8_t a = 1; a < 127; ++a) {
+                // Зламана шина (SDA/SCL замкнені, датчик без живлення) → кожна адреса чекає
+                // таймаут, і весь перебір триває секунди — без цього спрацьовує watchdog.
+                ctx_.feedWatchdog();
                 Wire.beginTransmission(a);
                 if (Wire.endTransmission() == 0) {
                     const char* what = "";
@@ -215,6 +234,24 @@ void SerialConsole::execute(const tuning::Command& c, uint32_t nowMs) {
             if (found == 0) io_.println("  нічого не знайдено: перевір 3V3, GND, SDA=8, SCL=9");
             else io_.printf("  компас у прошивці: %s (потрібно LSM9DS1 0x1E+0x6B або FXOS8700 0x1C..0x1F)\n",
                             ctx_.imu.chipName());
+            return;
+        }
+        case CmdType::ImuInfo: {
+            // Діагностика компаса: осі човна x — ніс, y — правий борт, z — вниз.
+            const nav::Vec3 d = ctx_.imu.down();
+            const nav::Vec3 r = ctx_.imu.rawMag();
+            const nav::Vec3 m = nav::applyMagCal(core::magCal(ctx_.params), r);
+            constexpr float kDeg = 57.29578f;
+            const float roll = std::atan2(d.y, d.z) * kDeg;
+            const float pitch = std::atan2(-d.x, std::sqrt(d.y * d.y + d.z * d.z)) * kDeg;
+            io_.printf("чип: %s   вниз: %+.2f %+.2f %+.2f   крен %+.1f°  тангаж %+.1f°\n",
+                       ctx_.imu.chipName(), d.x, d.y, d.z, roll, pitch);
+            io_.printf("поле сире, Гс:     x %+.3f  y %+.3f  z %+.3f  |B| %.3f\n", r.x, r.y, r.z,
+                       std::sqrt(r.x * r.x + r.y * r.y + r.z * r.z));
+            io_.printf("поле після cal, Гс: x %+.3f  y %+.3f  z %+.3f  |B| %.3f  гориз. %.3f\n", m.x, m.y,
+                       m.z, std::sqrt(m.x * m.x + m.y * m.y + m.z * m.z), std::sqrt(m.x * m.x + m.y * m.y));
+            io_.printf("курс: %.1f   (поле Землі тут ≈ 0.5 Гс, горизонтальне ≈ 0.2 Гс)\n",
+                       ctx_.imu.heading(core::magCal(ctx_.params), ctx_.params.magDecl));
             return;
         }
         case CmdType::ServoTest: {

@@ -65,3 +65,7 @@ bool GpsNeo6m::hasLocation() const { return gps_.location.isValid(); }
 double GpsNeo6m::lat() const { return hasLocation() ? gps_.location.lat() : 0.0; }
 
 double GpsNeo6m::lon() const { return hasLocation() ? gps_.location.lng() : 0.0; }
+
+float GpsNeo6m::courseDeg() const {
+    return gps_.course.isValid() ? static_cast<float>(gps_.course.deg()) : -1.0f;
+}

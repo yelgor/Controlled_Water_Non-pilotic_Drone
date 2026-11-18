@@ -32,6 +32,7 @@ public:
     SerialConsole(Stream& io, ConsoleContext ctx) : io_(io), ctx_(ctx) {}
     void poll(uint32_t nowMs);
     bool telemetryOn() const { return tele_; }
+    bool rawOn() const { return raw_; }
 
 private:
     void execute(const tuning::Command& c, uint32_t nowMs);
@@ -47,4 +48,5 @@ private:
     size_t len_ = 0;
     bool overflow_ = false;
     bool tele_ = false;
+    bool raw_ = false;
 };

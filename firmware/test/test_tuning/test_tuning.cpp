@@ -54,6 +54,10 @@ void test_parse_other_commands() {
     TEST_ASSERT_EQUAL(static_cast<int>(CmdType::Heading),
                       static_cast<int>(parseCommand("hdg 270").type));
     TEST_ASSERT_EQUAL(static_cast<int>(CmdType::I2cScan), static_cast<int>(parseCommand("i2c").type));
+    TEST_ASSERT_EQUAL(static_cast<int>(CmdType::ImuInfo), static_cast<int>(parseCommand("imu").type));
+    TEST_ASSERT_EQUAL(static_cast<int>(CmdType::RawOn), static_cast<int>(parseCommand("raw on").type));
+    TEST_ASSERT_EQUAL(static_cast<int>(CmdType::RawOff), static_cast<int>(parseCommand("raw off").type));
+    TEST_ASSERT_EQUAL(static_cast<int>(CmdType::BadArgs), static_cast<int>(parseCommand("raw").type));
     TEST_ASSERT_EQUAL(static_cast<int>(CmdType::ServoTest),
                       static_cast<int>(parseCommand("servo").type));
 }
@@ -105,10 +109,32 @@ void test_csv_header_and_row_have_same_columns() {
     TEST_ASSERT_EQUAL(0, std::strncmp(r, "12345,HOLD,350.0,10.0,", 22));
     // координати з 7 знаками і в кінці рядка
     telemetry::formatCsvRow(r, sizeof(r), 1, s, 9, 49.8397123, 24.0297456);
-    TEST_ASSERT_NOT_NULL(std::strstr(r, ",49.8397123,24.0297456\n"));
+    TEST_ASSERT_NOT_NULL(std::strstr(r, ",49.8397123,24.0297456,"));
+    // сирі дані компаса й курс GPS — у кінці
+    telemetry::CsvExtra ex;
+    ex.mx = 0.1234f; ex.my = -0.5f; ex.mz = -1.3912f; ex.dx = 0.01f; ex.dy = -0.02f; ex.dz = 0.999f;
+    ex.cog = 271.25f;
+    telemetry::formatCsvRow(r, sizeof(r), 1, s, 9, 49.8397123, 24.0297456, ex);
+    TEST_ASSERT_NOT_NULL(std::strstr(r, ",0.1234,-0.5000,-1.3912,0.010,-0.020,0.999,271.2\n"));
     cr = 0;
     for (char* c = r; *c; ++c) cr += (*c == ',');
     TEST_ASSERT_EQUAL(ch, cr);
+}
+
+void test_csv_worst_case_row_fits_log_line() {
+    // Рядок логу обмежений 256 байтами (FlightLog::kLineMax) — найдовші значення мають влазити.
+    char h[256], r[512];
+    TEST_ASSERT_TRUE(telemetry::formatCsvHeader(h, sizeof(h)) < 256);
+    core::VehicleStatus s;
+    s.mode = core::Mode::Disarmed;
+    s.headingSp = -359.9f; s.heading = -359.9f;
+    s.hdg.p = s.hdg.i = s.hdg.d = -99.9999f; s.rudder = -1.0f;
+    s.speedSp = s.speed = -99.99f;
+    s.spd.p = s.spd.i = s.spd.d = s.spd.ff = -99.9999f; s.throttle = -1.0f;
+    telemetry::CsvExtra ex;
+    ex.mx = ex.my = ex.mz = -9.9999f; ex.dx = ex.dy = ex.dz = -1.0f; ex.cog = 359.9f;
+    const int n = telemetry::formatCsvRow(r, sizeof(r), 4294967295u, s, 99, -89.9999999, -179.9999999, ex);
+    TEST_ASSERT_TRUE(n < 256);
 }
 
 int main(int, char**) {
@@ -121,5 +147,6 @@ int main(int, char**) {
     RUN_TEST(test_defaults_are_conservative_and_valid);
     RUN_TEST(test_param_names_unique);
     RUN_TEST(test_csv_header_and_row_have_same_columns);
+    RUN_TEST(test_csv_worst_case_row_fits_log_line);
     return UNITY_END();
 }

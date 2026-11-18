@@ -24,7 +24,9 @@ constexpr uint8_t kFxosCtrlReg2 = 0x2B;
 constexpr uint8_t kFxosMCtrlReg1 = 0x5B;
 constexpr uint8_t kFxosMCtrlReg2 = 0x5C;
 constexpr float kFxosAccelMs2PerLsb = 0.000488f * 9.80665f;  // ±4g, 14 біт
-constexpr float kFxosMagUtPerLsb = 0.1f;
+// 0.1 мкТл/LSB = 0.001 Гс/LSB. Усе далі (калібрування, межі mag.off*) — у гаусах,
+// як і Adafruit_LSM9DS1, тож обидва чипи віддають однакові одиниці.
+constexpr float kFxosMagGaussPerLsb = 0.001f;
 
 bool writeReg(uint8_t addr, uint8_t reg, uint8_t val) {
     Wire.beginTransmission(addr);
@@ -112,7 +114,7 @@ bool Imu::readFxos(float acc[3], float mag[3]) {
     if (!readRegs(fxosAddr_, kFxosStatus, b, sizeof(b))) return false;
     for (int i = 0; i < 3; ++i) {
         acc[i] = static_cast<float>(be16(&b[1 + 2 * i]) >> 2) * kFxosAccelMs2PerLsb;
-        mag[i] = static_cast<float>(be16(&b[7 + 2 * i])) * kFxosMagUtPerLsb;
+        mag[i] = static_cast<float>(be16(&b[7 + 2 * i])) * kFxosMagGaussPerLsb;
     }
     return true;
 }

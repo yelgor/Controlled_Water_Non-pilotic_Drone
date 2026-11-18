@@ -64,8 +64,14 @@ void handleLogging(uint32_t now, const core::VehicleStatus& st) {
 
     const bool needLine = flightLog.active() || console.telemetryOn();
     if (!needLine) return;
+    telemetry::CsvExtra ex;
+    const nav::Vec3& m = imu.rawMag();
+    const nav::Vec3& d = imu.down();
+    ex.mx = m.x; ex.my = m.y; ex.mz = m.z;
+    ex.dx = d.x; ex.dy = d.y; ex.dz = d.z;
+    ex.cog = gps.courseDeg();
     telemetry::formatCsvRow(csvLine, sizeof(csvLine), now, st, gps.satellites(), gps.lat(),
-                            gps.lon());
+                            gps.lon(), ex);
     if (flightLog.active()) flightLog.write(csvLine);
     if (console.telemetryOn()) Serial.print(csvLine);
     flightLog.flushIfDue(now);
@@ -128,6 +134,12 @@ void loop() {
 
         imu.read(now);
         if (magCalibrator.active()) magCalibrator.add(imu.rawMag());
+        if (console.rawOn()) {
+            // Сирі дані для калібрування на ноутбуці (tools/calib_mag.py), 50 Гц.
+            const nav::Vec3& m = imu.rawMag();
+            const nav::Vec3& d = imu.down();
+            Serial.printf("RAW,%.4f,%.4f,%.4f,%.3f,%.3f,%.3f\n", m.x, m.y, m.z, d.x, d.y, d.z);
+        }
 
         core::VehicleInputs in;
         in.nowMs = now;

@@ -16,6 +16,13 @@ public:
     bool hasLocation() const;
     double lat() const;
     double lon() const;
+    // Курс руху над землею, град 0..360; −1, якщо невідомий. На малій швидкості — шум.
+    float courseDeg() const;
+    // Діагностика підключення: байтів прийнято і NMEA-речень з правильною контрольною сумою.
+    // Модуль шле дані й без супутників: 0 байт → дроти TX/RX (15/16) або живлення.
+    uint32_t charsReceived() const { return gps_.charsProcessed(); }
+    uint32_t sentencesOk() const { return gps_.passedChecksum(); }
+    uint32_t sentencesBad() const { return gps_.failedChecksum(); }
 
 private:
     void sendUbx(uint8_t cls, uint8_t id, const uint8_t* payload, uint16_t len);

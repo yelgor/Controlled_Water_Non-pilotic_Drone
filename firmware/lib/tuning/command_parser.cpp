@@ -67,6 +67,7 @@ Command parseCommand(const char* line) {
     if (eq(cmd, "load")) return simple(CmdType::Load);
     if (eq(cmd, "defaults")) return simple(CmdType::Defaults);
     if (eq(cmd, "i2c")) return simple(CmdType::I2cScan);
+    if (eq(cmd, "imu")) return simple(CmdType::ImuInfo);
     if (eq(cmd, "servo")) return simple(CmdType::ServoTest);
 
     if (eq(cmd, "get")) {
@@ -93,6 +94,12 @@ Command parseCommand(const char* line) {
     if (eq(cmd, "cal")) {
         if (n == 2 && eq(t[1], "start")) c.type = CmdType::CalStart;
         else if (n == 2 && eq(t[1], "stop")) c.type = CmdType::CalStop;
+        else c.type = CmdType::BadArgs;
+        return c;
+    }
+    if (eq(cmd, "raw")) {
+        if (n == 2 && eq(t[1], "on")) c.type = CmdType::RawOn;
+        else if (n == 2 && eq(t[1], "off")) c.type = CmdType::RawOff;
         else c.type = CmdType::BadArgs;
         return c;
     }
