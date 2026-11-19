@@ -1,12 +1,28 @@
 # Controlled Water Non-pilotic Drone
 
 Водний безпілотний катер-аероглісер на ESP32-S3: один безщітковий мотор з повітряним пропелером,
-серво повертає кермо в потоці повітря. Керування з пульта RadioMaster TX12 (ELRS/CRSF),
-сенсори — IMU (NXP FXOS8700 + FXAS21002 або LSM9DS1) і GPS NEO-6M.
+серво повертає кермо в потоці повітря. Керування з пульта RadioMaster TX12 (ExpressLRS / CRSF),
+сенсори — IMU (NXP FXOS8700 + FXAS21002) і GPS u-blox NEO-6M.
 
 Мета — від ручного керування до утримання курсу і швидкості (PID) і автономного руху.
 
 **Команда КВН:** Владислав Ткачук, Назар Рожко, Захар Колодчак, Матвій Піх.
+
+## Стан проєкту (19.11.2026)
+
+| | Що є | Стан |
+|---|---|---|
+| Ручне керування з пульта | режими, failsafe, обмеження газу й керма | ✅ працює на воді |
+| **PID утримання курсу (HOLD)** | тумблер на пульті, курс з компаса | ✅ **перевірено на воді**, тримає курс; налаштування коефіцієнтів триває |
+| PID утримання швидкості | швидкість з GPS | ⏳ є в прошивці, на воді не тестувався |
+| Лог заїздів | flash 13 МБ, 10 рядків/с, скачування по USB | ✅ |
+| Калібрування компаса | за колами на воді | ✅ метод працює; треба жорстко закріпити IMU |
+| Фільтр Калмана (EKF) | IMU + GPS | ✅ у симуляції й на записаних даних; ⏳ ще не в прошивці катера |
+| Повернення до точки старту | — | ⏳ план |
+
+Повний опис системи для звіту — [`docs/project-overview-for-report.md`](docs/project-overview-for-report.md):
+інтерфейси і протоколи, як працюють IMU і компас, PID (коефіцієнти і тест), де є фільтр Калмана,
+як працює лог, хронологія всіх заїздів.
 
 ## Де що лежить
 
@@ -15,25 +31,28 @@
 
 | Частина | На `main` | Гілка | Що всередині | Стан |
 |---|---|---|---|---|
-| **Прошивка катера** | [`firmware/`](firmware), [`tools/`](tools), [`docs/`](docs), [`FIRMWARE.md`](FIRMWARE.md) | [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) | основна прошивка: режими, PID курсу і швидкості, безпека, лог у flash, консоль, тести; скрипти для логів і карти; документація | ✅ катер пливе з пульта, PID налаштовується |
+| **Прошивка катера** | [`firmware/`](firmware), [`tools/`](tools), [`docs/`](docs), [`FIRMWARE.md`](FIRMWARE.md) | [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) | режими, PID курсу і швидкості, безпека, лог у flash, консоль, тести на ПК; скрипти для логів, карти й калібрування; документація | ✅ PID курсу перевірено на воді |
 | **Симуляція** | [`simulation/`](simulation) | [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) | Gazebo Sim 8 + ROS 2 Jazzy: модель катера, EKF, PID, маршрути, результати | ✅ готова |
 | **Допоміжний софт** | [`check_servo/`](check_servo), [`kater_rc_old/`](kater_rc_old), [`schedular/`](schedular) | [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) | тест серво, стара прошивка ручного керування, планувальник задач | 📦 архів і тести |
 | **Експерименти** | — | [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) | тести IMU і GPS: дрейф гіро, калібрування, EKF гіро + GPS | 🔄 в процесі |
 | **Залізо** | — | [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) | перша прошивка серво + мотор, інструкції (прив'язка пульта, LSM9DS1) | ⏳ плата ще не розведена |
 
-## Детальніше по гілках
-
-### [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) — прошивка катера
+### Прошивка: `firmware/`, `tools/`, `docs/`
 
 | Шлях | Що це |
 |---|---|
-| `firmware/` | прошивка (PlatformIO): `src/` — робота з залізом, `lib/` — логіка, `test/` — тести на ПК |
-| `tools/` | злити лог з катера, графіки, карта заїзду |
-| `docs/architecture.md` | як влаштована прошивка |
-| `docs/pid-tuning.md` | як налаштовувати PID на воді |
-| `docs/changes-2026-11-16.md` | результати перших заїздів і зміни |
+| [`firmware/`](firmware) | прошивка (PlatformIO): `src/` — робота з залізом, `lib/` — логіка, `test/` — тести на ПК (80) |
+| [`tools/get_log.py`](tools/get_log.py) | злити логи з катера по USB (`list`, номер, `all`) |
+| [`tools/plot_log.py`](tools/plot_log.py), [`tools/map_log.py`](tools/map_log.py) | графіки заїзду і карта треку |
+| [`tools/calib_from_log.py`](tools/calib_from_log.py) | калібрування компаса за колами на воді |
+| [`tools/calib_mag.py`](tools/calib_mag.py), [`tools/calib_imu.py`](tools/calib_imu.py) | калібрування компаса по USB |
+| [`docs/project-overview-for-report.md`](docs/project-overview-for-report.md) | **опис системи і результати для звіту** |
+| [`docs/results-2026-11-18.md`](docs/results-2026-11-18.md) | результати заїздів 18.11 |
+| [`docs/architecture.md`](docs/architecture.md) | як влаштована прошивка |
+| [`docs/pid-tuning.md`](docs/pid-tuning.md) | як налаштовувати PID на воді |
+| [`docs/changes-2026-11-16.md`](docs/changes-2026-11-16.md), [`docs/changes-2026-11-18.md`](docs/changes-2026-11-18.md) | журнал змін і стан заліза |
 
-### [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) — симуляція
+### Симуляція: `simulation/`
 
 | Шлях | Що це |
 |---|---|
@@ -43,7 +62,15 @@
 
 Модель у симуляції відрізняється від реального катера: два мотори з реверсом, маса 1,5 кг.
 
-### [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) — експерименти
+### Допоміжний софт
+
+| Шлях | Що це |
+|---|---|
+| [`check_servo/`](check_servo) | тест серво з монітора порту |
+| [`kater_rc_old/`](kater_rc_old) | стара прошивка ручного керування (без GPS та IMU) |
+| [`schedular/`](schedular) | двоядерний планувальник задач з самовідновленням IMU (ранній каркас) |
+
+### Гілка [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment)
 
 | Шлях | Що це |
 |---|---|
@@ -51,7 +78,7 @@
 | `imu_test/tools/` | Python: запис, аналіз і варіація Аллана, калібрування, EKF гіро + GPS |
 | `imu_test/data/` | графіки і текстові звіти тестів |
 
-### [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) — залізо
+### Гілка [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware)
 
 | Шлях | Що це |
 |---|---|
@@ -59,27 +86,43 @@
 | `motor_servo/docs/LSM9DS1.pdf` | документація на IMU |
 | `Instructione_bind/bind_elrs_tx12.pdf` | як прив'язати пульт TX12 до приймача |
 
-### [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) — допоміжний софт
-
-| Шлях | Що це |
-|---|---|
-| `check_servo/` | тест серво з монітора порту |
-| `kater_rc_old/` | стара прошивка ручного керування (без GPS та IMU) |
-| `schedular/` | двоядерний планувальник задач з самовідновленням IMU (ранній каркас) |
-
 ## Результати
 
-### Катер на воді
+### PID утримання курсу на воді (19.11)
+
+![Тест PID утримання курсу](docs/img/pid_hold_log014.png)
+
+До вмикання HOLD пілот повертав катер (курс змінився на ~120° за 6 с). Після вмикання регулятор
+**зупинив поворот і 10 с утримував курс**; кермо від PID реагує в правильний бік (кореляція +0,95).
+
+- Тонка світла лінія — сирий курс з компаса: «тремтіння» 3–6° за 0,1 с — шум магнітометра, а не рух катера
+  (на відео катер іде рівно).
+- Стала похибка ~10° — очікувана для чистого P-регулятора (`Kp = 0,01`, `Ki = Kd = 0`): щоб протидіяти
+  постійному моменту від пропелера, кермо має стояти на ~0,1, а P дає це лише за похибки 0,1 / 0,01 = 10°.
+  Наступний крок — `Kp = 0,02` і `Ki = 0,003`.
+
+### Що з'ясували на заїздах 18–19.11
+
+| Що | Результат |
+|---|---|
+| Зв'язок з пультом (ELRS) | 100 % без обривів |
+| Швидкість | 0,6–0,7 м/с у воді на 20–38 % газу, 0,8–1,0 м/с на 35–50 % |
+| Кермо | працювало навпаки — виправлено (`rud.rev 1`); на газі пропелер крутить катер вправо — трим `rud.trim 0.09` |
+| Компас | калібрування методом еліпса за колами; зсувається між заїздами, якщо батарея й дроти лягають інакше |
+| Течія | ~0,03 м/с — на рух катера майже не вплинула |
+| Лог | спочатку при скачуванні губилось 25–70 % рядків — виправлено, тепер 100 % |
+
+Подробиці і всі цифри — у [`docs/project-overview-for-report.md`](docs/project-overview-for-report.md).
+
+### Катер на воді: перший заїзд (16.11)
 
 Перший заїзд з записом логу (`log000`): **164 м за 4,2 хв, максимум 1,5 м/с**, газ обмежено до 30 %.
-На заїздах 2026-11-16 зв'язок з пультом, компас і GPS працювали без обривів. Подробиці — у
-[`docs/changes-2026-11-16.md`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/blob/feature/pid-control/docs/changes-2026-11-16.md).
 
-![Трек заїзду log000](https://raw.githubusercontent.com/yelgor/Controlled_Water_Non-pilotic_Drone/feature/pid-control/docs/img/log000_track.png)
+![Трек заїзду log000](docs/img/log000_track.png)
 
 Колір треку — швидкість (синій 0 м/с → червоний 1,5 м/с), зелена точка — старт, червона — фініш.
 
-### Навігація: IMU + GPS
+### Навігація: IMU + GPS (фільтр Калмана)
 
 Плату з IMU і GPS носили по маршруту і порівнювали: тільки GPS (чорні точки), тільки IMU (помаранчева),
 фільтр EKF, що поєднує обидва (синя).
@@ -90,14 +133,24 @@
 | тільки IMU: 20 м похибки, **EKF: 8 м** | тільки IMU: 53 м похибки, **EKF: 6 м** |
 
 Висновок: одного IMU не вистачає, а EKF IMU + GPS тримає трек у межах кількох метрів і переживає
-короткі провали GPS. Усі графіки й цифри — у [гілці `experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment).
+короткі провали GPS. У прошивці катера фільтра Калмана поки немає — це наступний крок.
 
 ## Швидкий старт (прошивка катера)
 
 ```bash
 git clone https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone.git
-cd Controlled_Water_Non-pilotic_Drone/firmware   # прошивка вже на main
-# найсвіжіші зміни прошивки — у гілці: git switch feature/pid-control
-pio test -e native     # тести на ПК
+cd Controlled_Water_Non-pilotic_Drone/firmware
+pio test -e native     # тести на ПК (80)
 pio run -e esp32s3     # зібрати прошивку
+pio run -e esp32s3 -t upload
 ```
+
+Після заїзду (плата по USB, пульт вимкнений):
+
+```bash
+python3 tools/get_log.py all          # злити всі логи
+python3 tools/plot_log.py log000.csv  # графіки
+python3 tools/map_log.py log000.csv   # карта треку
+```
+
+Логи заїздів у гіт не додаються: вони містять точні GPS-координати.
