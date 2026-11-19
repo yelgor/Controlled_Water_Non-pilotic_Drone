@@ -155,7 +155,7 @@ def main():
 
     import time
     import serial
-    port = (glob.glob("/dev/cu.usbmodem*") or [None])[0]
+    port = (sorted(glob.glob("/dev/ttyACM*")) + sorted(glob.glob("/dev/ttyUSB*")) + glob.glob("/dev/cu.usbmodem*") or [None])[0]
     if not port:
         print("плату не знайдено")
         return 1
