@@ -122,6 +122,18 @@ const VehicleStatus& Vehicle::update(const VehicleInputs& in) {
     else if (maxThr > 0.0f) speedFraction = throttle / maxThr;
     const float rudScale = ctl::rudderSpeedScale(speedFraction, params_.rudMin);
 
+    // Загальний хід (rud.max) і плавність серво (rud.rate) — у всіх режимах, поверх
+    // зменшення від швидкості. На PID не впливає: він бачить немасштабоване кермо.
+    const float rudMax = sane(params_.rudMax, 0.1f, 1.0f, 1.0f);
+    const float target = rudder * rudScale * rudMax;
+    float servoCmd = target;
+    if (hasServoCmd_ && std::isfinite(params_.rudRate) && params_.rudRate > 0.0f) {
+        const float step = params_.rudRate * dt;
+        servoCmd = servoCmd_ + ctl::clamp(target - servoCmd_, -step, step);
+    }
+    servoCmd_ = servoCmd;
+    hasServoCmd_ = true;
+
     // PID і bumpless працюють з немасштабованим кермом; масштаб — тільки на серво.
     lastRudder_ = rudder;
     lastThrottle_ = throttle;
@@ -136,7 +148,7 @@ const VehicleStatus& Vehicle::update(const VehicleInputs& in) {
     st_.spd = speedHold ? speed_.terms() : ctl::PidTerms{};
     st_.throttle = throttle;
     st_.rudderScale = rudScale;
-    st_.pulses = ctl::mixRudderMotor(rudder * rudScale, throttle, mixer_);
+    st_.pulses = ctl::mixRudderMotor(servoCmd, throttle, mixer_);
     st_.rcOk = in.rc.linkOk;
     st_.imuOk = imuOk;
     st_.gpsOk = gpsOk;

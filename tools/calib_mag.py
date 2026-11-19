@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Калібрування магнітометра на ноутбуці: сирі дані з плати → еліпсоїд → mag.off*/mag.scl* у плату.
 
-    python3 tools/calib_mag.py [порт] [секунди]        (за замовчуванням: перший /dev/cu.usbmodem*, 60 с)
+    python3 tools/calib_mag.py [порт] [секунди]        (за замовчуванням: перший /dev/ttyACM* (Linux) або /dev/cu.usbmodem* (Mac), 60 с)
 
 Поки йде запис — крутити плату/катер В УСІ БОКИ (повні оберти, нахили, догори дном). На відміну від
 вбудованого `cal` (min/max), тут підбирається еліпсоїд за всіма точками, тож нахили не шкодять.
@@ -77,10 +77,10 @@ def coverage(pts, off):
 
 
 def main():
-    port = sys.argv[1] if len(sys.argv) > 1 else (glob.glob("/dev/cu.usbmodem*") or [None])[0]
+    port = sys.argv[1] if len(sys.argv) > 1 else (sorted(glob.glob("/dev/ttyACM*")) + sorted(glob.glob("/dev/ttyUSB*")) + glob.glob("/dev/cu.usbmodem*") or [None])[0]
     dur = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
     if not port:
-        sys.exit("плату не знайдено (/dev/cu.usbmodem*)")
+        sys.exit("плату не знайдено (/dev/ttyACM*, /dev/cu.usbmodem*) — вкажіть порт першим аргументом")
     s = serial.Serial()
     s.port, s.baudrate, s.timeout, s.dtr, s.rts = port, 115200, 0.1, False, False
     s.open()

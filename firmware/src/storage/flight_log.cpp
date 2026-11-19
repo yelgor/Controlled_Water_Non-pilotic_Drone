@@ -193,6 +193,14 @@ bool FlightLog::dump(Print& out, unsigned index, void (*feed)()) {
     uint8_t buf[256];
     while (f.available()) {
         const size_t n = f.read(buf, sizeof(buf));
+        // USB-CDC має setTxTimeoutMs(20): якщо буфер повний довше 20 мс, write() викидає дані
+        // (лог приходив на ПК з дірками, 30–80 % рядків). Чекаємо місце в буфері перед записом;
+        // межа 2 с — щоб не зависнути, якщо кабель висмикнули посеред передачі.
+        const uint32_t waitStart = millis();
+        while (out.availableForWrite() < static_cast<int>(n) && millis() - waitStart < 2000) {
+            delay(1);
+            if (feed) feed();
+        }
         out.write(buf, n);
         if (feed) feed();
     }

@@ -84,7 +84,7 @@ void SerialConsole::printStatus(uint32_t nowMs) {
                "   газ: %.2f\n",
                s.heading, s.headingSp, s.rudder, s.rudderScale * 100.0f, s.speed, s.throttle);
     const core::RcInput rc = ctx_.rc.input(nowMs);
-    io_.printf("стіки: газ %.2f%s  кермо %+.2f   ARM(CH5): %s   HOLD(CH6): %s\n", rc.throttle,
+    io_.printf("стіки: газ %.2f%s  кермо %+.2f   ARM(CH5): %s   HOLD(CH8): %s\n", rc.throttle,
                rc.throttle < core::Vehicle::kArmThrottleMax ? " (нуль)" : " (НЕ нуль!)",
                rc.rudder, rc.armSwitch ? "ON" : "OFF", rc.holdSwitch ? "ON" : "OFF");
     io_.print("канали, мкс:");

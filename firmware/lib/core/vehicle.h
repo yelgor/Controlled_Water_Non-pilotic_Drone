@@ -95,6 +95,8 @@ private:
     bool speedEngaged_ = false;
     float lastRudder_ = 0.0f;
     float lastThrottle_ = 0.0f;
+    float servoCmd_ = 0.0f;  // що реально подано на серво (після rud.max і rud.rate)
+    bool hasServoCmd_ = false;
 };
 
 }  // namespace core

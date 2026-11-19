@@ -39,6 +39,11 @@ struct Params {
     // Без GPS замість швидкості береться газ (газ = thr.max ≈ «повна швидкість»).
     float rudMin = 0.4f;
     float rudVmax = 6.0f;  // м/с
+    // Загальний хід керма (частка від ±400 мкс) і швидкість, з якою серво може рухатись,
+    // у всіх режимах. rud.rate — ходів за секунду: 2.5 → від центру до упору за 0.4 с.
+    // rud.rate = 0 вимикає обмеження швидкості.
+    float rudMax = 0.8f;
+    float rudRate = 2.5f;
 
     // --- компас (mag.*) ---
     float magDecl = 0.0f;  // магнітне схилення, °
@@ -50,7 +55,7 @@ struct Params {
 };
 
 // Версія формату для збереження у flash. Міняти, коли змінюється Params.
-constexpr uint32_t kParamsVersion = 2;  // 2: rud.min, rud.vmax
+constexpr uint32_t kParamsVersion = 3;  // 2: rud.min, rud.vmax; 3: rud.max, rud.rate
 
 inline ctl::HeadingConfig headingConfig(const Params& p) {
     ctl::HeadingConfig c;
