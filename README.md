@@ -24,6 +24,14 @@
 
 ![Тест PID утримання курсу](docs/img/pid_hold_log014.png)
 
+### Траєкторії заїздів 1–6
+
+![Траєкторії всіх заїздів](docs/img/tracks/all_runs.png)
+
+Метри від точки старту (координат немає), колір — швидкість за GPS, товста лінія — режим HOLD.
+Окремі картинки — [`docs/img/tracks/`](docs/img/tracks). Що в кожному заїзді —
+[docs/project-overview-for-report.md](docs/project-overview-for-report.md), розділ 12.
+
 ### Заїзд `log000`: 164 м за 4,2 хв, максимум 1,5 м/с
 
 ![Трек заїзду log000](docs/img/log000_track.png)
