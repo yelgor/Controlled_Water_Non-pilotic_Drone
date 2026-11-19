@@ -10,15 +10,16 @@
 
 ## Де що лежить
 
-Кожна частина проєкту — в окремій гілці. Натисни на назву, щоб відкрити.
+Готові частини злито в `main` і лежать у папках нижче. Незавершені (експерименти, залізо) поки
+живуть в окремих гілках. Гілки готових частин теж лишаються: у них ведеться подальша робота.
 
-| Частина | Гілка | Що всередині | Стан |
-|---|---|---|---|
-| **Прошивка катера** | [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) | основна прошивка: режими, PID курсу і швидкості, безпека, лог у flash, консоль, тести; скрипти для логів і карти; документація | ✅ катер пливе з пульта, PID налаштовується |
-| **Симуляція** | [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) | Gazebo Sim 8 + ROS 2 Jazzy: модель катера, EKF, PID, маршрути, результати | ✅ готова |
-| **Експерименти** | [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) | тести IMU і GPS: дрейф гіро, калібрування, EKF гіро + GPS | 🔄 в процесі |
-| **Залізо** | [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) | перша прошивка серво + мотор, інструкції (прив'язка пульта, LSM9DS1) | ⏳ плата ще не розведена |
-| **Допоміжний софт** | [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) | тест серво, стара прошивка ручного керування, планувальник задач | 📦 архів і тести |
+| Частина | На `main` | Гілка | Що всередині | Стан |
+|---|---|---|---|---|
+| **Прошивка катера** | [`firmware/`](firmware), [`tools/`](tools), [`docs/`](docs), [`FIRMWARE.md`](FIRMWARE.md) | [`feature/pid-control`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/feature/pid-control) | основна прошивка: режими, PID курсу і швидкості, безпека, лог у flash, консоль, тести; скрипти для логів і карти; документація | ✅ катер пливе з пульта, PID налаштовується |
+| **Симуляція** | [`simulation/`](simulation) | [`simulation`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/simulation) | Gazebo Sim 8 + ROS 2 Jazzy: модель катера, EKF, PID, маршрути, результати | ✅ готова |
+| **Допоміжний софт** | [`check_servo/`](check_servo), [`kater_rc_old/`](kater_rc_old), [`schedular/`](schedular) | [`software`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/software) | тест серво, стара прошивка ручного керування, планувальник задач | 📦 архів і тести |
+| **Експерименти** | — | [`experiment`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/experiment) | тести IMU і GPS: дрейф гіро, калібрування, EKF гіро + GPS | 🔄 в процесі |
+| **Залізо** | — | [`hardware`](https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone/tree/hardware) | перша прошивка серво + мотор, інструкції (прив'язка пульта, LSM9DS1) | ⏳ плата ще не розведена |
 
 ## Детальніше по гілках
 
@@ -95,9 +96,8 @@
 
 ```bash
 git clone https://github.com/yelgor/Controlled_Water_Non-pilotic_Drone.git
-cd Controlled_Water_Non-pilotic_Drone
-git switch feature/pid-control
-cd firmware
+cd Controlled_Water_Non-pilotic_Drone/firmware   # прошивка вже на main
+# найсвіжіші зміни прошивки — у гілці: git switch feature/pid-control
 pio test -e native     # тести на ПК
 pio run -e esp32s3     # зібрати прошивку
 ```
