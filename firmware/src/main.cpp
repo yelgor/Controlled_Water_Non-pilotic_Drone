@@ -101,8 +101,12 @@ void setup() {
     vehicle.applyParams(params);
     vehicle.setArmSwitchBypass(cfg::kArmSwitchBypass);
     if (cfg::kArmSwitchBypass) {
-        Serial.println("!!! ТЕСТ: тумблери ARM і HOLD вимкнено — армиться сам при газі 0,"
-                       " газ і кермо зі стіків (config.h)");
+        if (cfg::kHoldSwitchInBypass)
+            Serial.println("!!! ТЕСТ: тумблер ARM вимкнено — армиться сам при газі 0;"
+                           " тумблер HOLD (CH8, тумблер C) ПРАЦЮЄ — тримає курс (config.h)");
+        else
+            Serial.println("!!! ТЕСТ: тумблери ARM і HOLD вимкнено — армиться сам при газі 0,"
+                           " газ і кермо зі стіків (config.h)");
     }
 
     Serial.println("[2/5] компас...");
@@ -144,7 +148,7 @@ void loop() {
         core::VehicleInputs in;
         in.nowMs = now;
         in.rc = rcLink.input(now);
-        if (cfg::kArmSwitchBypass) in.rc.holdSwitch = false;  // тест: тільки MANUAL
+        if (cfg::kArmSwitchBypass && !cfg::kHoldSwitchInBypass) in.rc.holdSwitch = false;  // тест: тільки MANUAL
         in.imuOk = imu.ok(now);
         in.headingDeg = imu.heading(core::magCal(params), params.magDecl);
         in.gpsOk = gps.ok(now);
