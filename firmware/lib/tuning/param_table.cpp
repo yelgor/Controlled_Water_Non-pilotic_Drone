@@ -27,6 +27,8 @@ const ParamDef kParams[] = {
     {"rud.rev", &Params::rudRev, 0.0f, 1.0f, "кермо: 1=реверс серво"},
     {"rud.min", &Params::rudMin, 0.1f, 1.0f, "кермо: частка ходу на повній швидкості (1=вимк.)"},
     {"rud.vmax", &Params::rudVmax, 0.5f, 30.0f, "кермо: «повна» швидкість для rud.min, м/с"},
+    {"rud.max", &Params::rudMax, 0.3f, 1.0f, "кермо: загальний хід (1 = ±400 мкс)"},
+    {"rud.rate", &Params::rudRate, 0.0f, 20.0f, "кермо: швидкість серво, ходів/с (0 = без обмеж.)"},
     {"mag.decl", &Params::magDecl, -30.0f, 30.0f, "компас: магнітне схилення, град"},
     {"mag.offx", &Params::magOffX, -2.0f, 2.0f, "компас: зміщення X (з cal)"},
     {"mag.offy", &Params::magOffY, -2.0f, 2.0f, "компас: зміщення Y (з cal)"},

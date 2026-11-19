@@ -20,6 +20,14 @@ static VehicleInputs inputs(uint32_t t) {
     return in;
 }
 
+// Без rud.max і rud.rate: серво одразу на повний хід (для тестів масштабу від швидкості).
+static Params fullFastRudder() {
+    Params p;
+    p.rudMax = 1.0f;
+    p.rudRate = 0.0f;
+    return p;
+}
+
 // Армимо: тумблер OFF → ON при газі 0.
 static uint32_t arm(Vehicle& v, uint32_t t) {
     VehicleInputs in = inputs(t);
@@ -216,6 +224,7 @@ void test_nan_sticks_are_safe() {
 
 void test_bypass_arms_without_switch_at_zero_throttle() {
     Vehicle v;
+    v.applyParams(fullFastRudder());
     v.setArmSwitchBypass(true);
     VehicleInputs in = inputs(0);  // тумблер ARM вимкнений
     v.update(in);
@@ -268,7 +277,7 @@ void test_bypass_link_loss_disarms_then_rearms_at_zero() {
 // --- хід керма від швидкості ---
 
 void test_rudder_reduced_with_gps_speed() {
-    Params p;  // rud.min 0.4, rud.vmax 6
+    Params p = fullFastRudder();  // rud.min 0.4, rud.vmax 6
     Vehicle v;
     v.applyParams(p);
     uint32_t t = arm(v, 0);
@@ -287,6 +296,7 @@ void test_rudder_reduced_with_gps_speed() {
 
 void test_rudder_reduced_with_throttle_without_gps() {
     Vehicle v;
+    v.applyParams(fullFastRudder());
     uint32_t t = arm(v, 0);
     VehicleInputs in = inputs(t + 20);
     in.rc.armSwitch = true;
@@ -299,7 +309,7 @@ void test_rudder_reduced_with_throttle_without_gps() {
 }
 
 void test_rudder_scale_off_when_min_is_one() {
-    Params p;
+    Params p = fullFastRudder();
     p.rudMin = 1.0f;
     Vehicle v;
     v.applyParams(p);
@@ -309,6 +319,62 @@ void test_rudder_scale_off_when_min_is_one() {
     in.rc.rudder = 1.0f;
     in.speedMps = 10.0f;
     TEST_ASSERT_EQUAL_UINT16(1900, v.update(in).pulses.rudderUs);
+}
+
+// --- загальний хід і швидкість серво ---
+
+void test_rudder_max_limits_travel() {
+    Params p = fullFastRudder();
+    p.rudMax = 0.8f;
+    Vehicle v;
+    v.applyParams(p);
+    uint32_t t = arm(v, 0);
+    VehicleInputs in = inputs(t + 20);
+    in.rc.armSwitch = true;
+    in.speedMps = 0.0f;
+    in.rc.rudder = 1.0f;
+    TEST_ASSERT_EQUAL_UINT16(1500 + 320, v.update(in).pulses.rudderUs);
+    in.nowMs += 20;
+    in.rc.rudder = -1.0f;
+    TEST_ASSERT_EQUAL_UINT16(1500 - 320, v.update(in).pulses.rudderUs);
+}
+
+void test_rudder_rate_limits_servo_speed() {
+    Params p = fullFastRudder();
+    p.rudRate = 2.5f;  // 0.05 ходу за 20 мс → від центру до упору за 0.4 с
+    Vehicle v;
+    v.applyParams(p);
+    uint32_t t = arm(v, 0);
+    VehicleInputs in = inputs(t + 20);
+    in.rc.armSwitch = true;
+    in.speedMps = 0.0f;
+    in.rc.rudder = 1.0f;
+    TEST_ASSERT_EQUAL_UINT16(1500 + 20, v.update(in).pulses.rudderUs);  // 0.05 × 400
+    for (int i = 0; i < 18; ++i) {
+        in.nowMs += 20;
+        v.update(in);
+    }
+    in.nowMs += 20;
+    TEST_ASSERT_EQUAL_UINT16(1900, v.update(in).pulses.rudderUs);  // 20 кроків = 0.4 с
+    in.nowMs += 20;
+    in.rc.rudder = 0.0f;  // назад до центру теж плавно
+    TEST_ASSERT_EQUAL_UINT16(1900 - 20, v.update(in).pulses.rudderUs);
+    // PID і статус бачать команду пілота, а не загальмоване серво
+    TEST_ASSERT_FLOAT_WITHIN(1e-4, 0.0f, v.status().rudder);
+}
+
+void test_default_rudder_is_reduced_and_smooth() {
+    Vehicle v;  // заводські rud.max 0.8, rud.rate 2.5
+    uint32_t t = arm(v, 0);
+    VehicleInputs in = inputs(t + 20);
+    in.rc.armSwitch = true;
+    in.speedMps = 0.0f;
+    in.rc.rudder = 1.0f;
+    for (int i = 0; i < 50; ++i) {  // 1 с — більш ніж досить
+        v.update(in);
+        in.nowMs += 20;
+    }
+    TEST_ASSERT_EQUAL_UINT16(1500 + 320, v.update(in).pulses.rudderUs);
 }
 
 int main(int, char**) {
@@ -329,6 +395,9 @@ int main(int, char**) {
     RUN_TEST(test_rudder_reduced_with_gps_speed);
     RUN_TEST(test_rudder_reduced_with_throttle_without_gps);
     RUN_TEST(test_rudder_scale_off_when_min_is_one);
+    RUN_TEST(test_rudder_max_limits_travel);
+    RUN_TEST(test_rudder_rate_limits_servo_speed);
+    RUN_TEST(test_default_rudder_is_reduced_and_smooth);
     RUN_TEST(test_bypass_arms_without_switch_at_zero_throttle);
     RUN_TEST(test_bypass_does_not_arm_with_throttle_up);
     RUN_TEST(test_bypass_link_loss_disarms_then_rearms_at_zero);
