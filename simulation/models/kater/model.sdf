@@ -1,0 +1,190 @@
+<?xml version="1.0" ?>
+<!--
+  Система координат моделі: X - вперед (ніс), Y - вліво, Z - вгору.
+  Початок base_link - на кілі посередині корпусу (не на ватерлінії).
+
+  Ключові числа (якщо міняєш масу - перерахуй осадку):
+    маса корпусу     1.5 кг (+2 x 0.02 кг гвинти)
+    коробка плавучості 0.355 x 0.115 x 0.08 м (6 частин)
+    осадка T = m / (rho * L * B) = 1.54 / (1000 * 0.355 * 0.115) ≈ 0.038 м
+-->
+<sdf version="1.9">
+  <model name="kater">
+
+    <link name="base_link">
+      <inertial>
+        <!-- ЦМ по X трохи попереду центру коробок - компенсує масу гвинтів на кормі (катер стоїть рівно), низько по Z (нижче центру плавучості) -->
+        <pose>-0.0126 0 0.02 0 0 0</pose>
+        <mass>1.5</mass>
+        <inertia>
+          <ixx>0.00305</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>0.02125</iyy><iyz>0</iyz>
+          <izz>0.0218</izz>
+        </inertia>
+      </inertial>
+
+      <!-- Візуал: STL з Fusion (мм -> м), повернутий носом по +X, кіль посередині корпусу в (0,0,0) -->
+      <visual name="hull_visual">
+        <pose>-0.240 0 -0.018 0 0 -1.5708</pose>
+        <geometry>
+          <mesh>
+            <uri>model://kater/meshes/boat.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.6 0.6 0.6 1</ambient>
+          <diffuse>0.85 0.85 0.85 1</diffuse>
+          <specular>0.3 0.3 0.3 1</specular>
+        </material>
+      </visual>
+
+      <!-- Колізії = об'єм для плавучості (коробка 0.355 x 0.115 x 0.08 м, розбита на 3x2).
+           Graded buoyancy у gz-sim 8.15 рахує занурений об'єм у системі коробки (без нахилу площини води),
+           тому одна коробка не дає відновлювального моменту при крені/тангажі - катер перекидається.
+           Кілька коробок занурюються по-різному при нахилі - це і дає правильну стійкість. -->
+      <collision name="hull_aft_left">
+        <pose>-0.13583 0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+      <collision name="hull_aft_right">
+        <pose>-0.13583 -0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+      <collision name="hull_mid_left">
+        <pose>-0.01750 0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+      <collision name="hull_mid_right">
+        <pose>-0.01750 -0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+      <collision name="hull_fwd_left">
+        <pose>0.10083 0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+      <collision name="hull_fwd_right">
+        <pose>0.10083 -0.02875 0.04 0 0 0</pose>
+        <geometry><box><size>0.11833 0.0575 0.08</size></box></geometry>
+      </collision>
+
+      <!-- IMU без шуму: шум додаси сам (тут через <noise> або у своєму вузлі) -->
+      <sensor name="imu_sensor" type="imu">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <topic>/kater/imu</topic>
+      </sensor>
+
+      <sensor name="navsat_sensor" type="navsat">
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>/kater/navsat</topic>
+      </sensor>
+    </link>
+
+    <!-- ================= Рушії (лівий / правий) ================= -->
+    <link name="left_prop">
+      <pose>-0.20 0.035 0.005 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>1e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>1e-5</iyy><iyz>0</iyz>
+          <izz>1e-5</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <pose>0 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.02</radius><length>0.005</length></cylinder></geometry>
+        <material><diffuse>0.9 0.6 0.1 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="left_prop_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>left_prop</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <link name="right_prop">
+      <pose>-0.20 -0.035 0.005 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>1e-5</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>1e-5</iyy><iyz>0</iyz>
+          <izz>1e-5</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <pose>0 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.02</radius><length>0.005</length></cylinder></geometry>
+        <material><diffuse>0.9 0.6 0.1 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name="right_prop_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>right_prop</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <!-- Команда = сила тяги в Н (use_angvel_cmd=false).
+         Топіки: /model/kater/joint/{left,right}_prop_joint/cmd_thrust (gz.msgs.Double) -->
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>kater</namespace>
+      <joint_name>left_prop_joint</joint_name>
+      <use_angvel_cmd>false</use_angvel_cmd>
+      <thrust_coefficient>0.1</thrust_coefficient>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.05</propeller_diameter>
+      <velocity_control>true</velocity_control>
+      <max_thrust_cmd>5.0</max_thrust_cmd>
+      <min_thrust_cmd>-5.0</min_thrust_cmd>
+    </plugin>
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>kater</namespace>
+      <joint_name>right_prop_joint</joint_name>
+      <use_angvel_cmd>false</use_angvel_cmd>
+      <thrust_coefficient>0.1</thrust_coefficient>
+      <fluid_density>1000</fluid_density>
+      <propeller_diameter>0.05</propeller_diameter>
+      <velocity_control>true</velocity_control>
+      <max_thrust_cmd>5.0</max_thrust_cmd>
+      <min_thrust_cmd>-5.0</min_thrust_cmd>
+    </plugin>
+
+    <!-- Гідродинамічне демпфування (модель Фоссена): F = X_u*u + X_u|u|*u*|u| ...
+         Значення від'ємні = опір. Підібрано під ~2 м/с при 2x5 Н, без розгойдування по heave/roll/pitch.
+         Приєднану масу не задаю: у Gazebo 8 вона робить симуляцію нестабільною на малих масах. -->
+    <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
+      <link_name>base_link</link_name>
+      <!-- surge -->
+      <xU>-1.0</xU>
+      <xUabsU>-2.0</xUabsU>
+      <!-- sway (корпус дуже опирається боковому руху) -->
+      <yV>-10.0</yV>
+      <yVabsV>-20.0</yVabsV>
+      <!-- heave: ~0.6 від критичного демпфування -->
+      <zW>-30.0</zW>
+      <!-- roll / pitch -->
+      <kP>-0.05</kP>
+      <mQ>-0.5</mQ>
+      <!-- yaw -->
+      <nR>-0.1</nR>
+      <nRabsR>-0.1</nRabsR>
+    </plugin>
+
+    <!-- Ground truth: /model/kater/odometry (gz.msgs.Odometry), без шуму -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <dimensions>3</dimensions>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </model>
+</sdf>
